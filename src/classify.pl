@@ -173,39 +173,3 @@ sub new {
           # returning undef disables them
 }
 
-
-# sub before_send {
-# 
-#   my ($self,$conn,$msginfo) = @_;
-# 
-#   my $hdr_edits      = $msginfo->header_edits;
-#   my $log_id         = $msginfo->log_id;       # log ID string, e.g. '48262-21-2'
-#   my $mail_id        = $msginfo->mail_id;      # long-term unique id, e.g. 'yxqmZgS+M09R'
-#   my $sender         = $msginfo->sender;       # envelope sender address, e.g. 'usr@e.com'
-#   my $mail_size      = $msginfo->msg_size;     # mail size in bytes
-#   my $spam_level     = $msginfo->spam_level;   # spam level (without per-recip boost)
-# 
-#   my $tempdir        = $msginfo->mail_tempdir;  # working directory for this process
-#   my $mail_file_name = $msginfo->mail_text_fn;
-# 
-#   # do_log($ll,"CUSTOM: temp.dir: %s", $tempdir);
-#   # do_log($ll,"CUSTOM: filename: %s", $mail_file_name);
-# 
-#   # full mail header is available in ->orig_header;
-#   # some individual header fields are quickly accessible ->orig_header_fields
-# 
-#   # mail body is only stored in file, which may be read if desired
-#   # my $fh = $msginfo->mail_text;  # file handle of our original mail
-#   # my $line; my $line_cnt = 0;
-#   # $fh->seek(0,0) or die "Can't rewind mail file: $!";
-#   # my $nb_links;
-# 
-#   # for ($! = 0; defined($line = $fh->getline); $! = 0) {
-#   #   $line_cnt++;
-#   #   # examine one $line at a time;  (or read by blocks for speed)
-#   # }
-# 
-#   $hdr_edits->add_header('X-Parsed','Before-send');
-# }
-
-1;  # insure a defined return
