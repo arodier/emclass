@@ -61,14 +61,12 @@ sub new {
 
     @recips         = $msginfo->recips;
 
-    # only work for me ATM
-    # exit unless $sender =~ /rodier/;
-
     # Check internal email first
     ($user,$domain) = split(/@/, $sender);
     $internal = scalar grep /$domain/, @local_domains_acl;
     if ( $internal ) {
       $type_value = 'Internal';
+      $reason = 'Same Domain';
       die 'Ok';
     }
 
