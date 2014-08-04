@@ -4,20 +4,18 @@ use warnings;
 
 # First added header: X-Email-Type
 # Try to classify email by many type:
-# Internal  : same or similar domain for the sender and the recipient (not implemented yet)
+# Internal  : same or similar domain for the sender and the recipient
 # Private   : private email, between two companies. Should not be a mailing list or something.
 # List      : proper mailing list, with standard headers
-# Bulk      : bulk email (detected)
+# Bulk      : bulk email
 # Unknown   : faile to classify
 
-# TODO: this should be read from amavisd configuration
 my @local_domains_acl = ( "example.com", "example.org" );
 
-# Maybe: Bulk email classification are added as 'tags'
+# Maybe: Bulk email classificatino are added as 'tags'
 # social: social networks, e.g facebook, linkedin, etc.
-# order: online order
-# bank: online banking
-# travel: check-in notices
+# order:  
+# travel: 
 # advertisement: generic advertisement
 
 my $debug = 1;
@@ -31,6 +29,7 @@ sub new {
   my($class,$conn,$msginfo) = @_;
   my $self = bless {}, $class;
   my $type_header = 'X-Email-Type';
+  my $type_reason_header = 'X-Email-Type-Detected-By';
   my $type_value = 'Unknown';
   my $hdr_edits = $msginfo->header_edits;
   my $user;
@@ -66,7 +65,6 @@ sub new {
     $internal = scalar grep /$domain/, @local_domains_acl;
     if ( $internal ) {
       $type_value = 'Internal';
-      $reason = 'Same Domain';
       die 'Ok';
     }
 
@@ -104,6 +102,7 @@ sub new {
     my $previous_line;
     my $line_cnt = 0;
     my $unsubscribe_regex = '.*(unsubscribe|opt\s?out|stop\s?receiving).*';
+    my $inside_table = 0;
 
     # start by inspecting the message, line by line
     $fh->seek(0,0) or die "Can't rewind mail file: $!";
@@ -125,12 +124,31 @@ sub new {
       elsif ( $line ~~ /style="[^"]*width:[0-9]+px/i ) {
         $fixed_layout = 1;
         $reason = 'Fixed Layout';
+        last;
       }
 
       # check for multiple tables
       elsif ( $line ~~ /<\/table>.*<\/table>/i ) {
         $fixed_layout = 1;
         $reason = 'Tables Layout';
+        last;
+      }
+
+      # check for imbricated tables
+      elsif ( $line ~~ /<table/i ) {
+        $inside_table++;
+
+        if ( $inside_table > 1 ) {
+          $fixed_layout = 1;
+          $reason = 'Multi Tables';
+          last;
+        }
+
+      }
+
+      # check for multiple tables
+      elsif ( $line ~~ /<\/table>/i ) {
+        $inside_table--;
       }
 
       $previous_line = $line;
@@ -156,7 +174,8 @@ sub new {
   }
   else {
     # Finally, add the type header
-    $hdr_edits->add_header($type_header, "$type_value ($reason)");
+    $hdr_edits->add_header($type_header, "$type_value");
+    $hdr_edits->add_header($type_reason_header, "$reason");
   }
 
   # Add tests results
