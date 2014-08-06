@@ -10,7 +10,11 @@ use warnings;
 # Bulk      : bulk email
 # Unknown   : faile to classify
 
-my @local_domains_acl = ( "example.com", "example.org" );
+# put your internal domains here.
+my @local_domains_acl = ( 'exemple.com', 'exemple.org' );
+
+# A set of headers used by bulk emails
+my @bulk_headers = ( 'X-Google-Appengine-App-Id' );
 
 # Maybe: Bulk email classificatino are added as 'tags'
 # social: social networks, e.g facebook, linkedin, etc.
@@ -60,6 +64,9 @@ sub new {
 
     @recips         = $msginfo->recips;
 
+    # only work for me ATM
+    # exit unless $sender =~ /rodier/;
+
     # Check internal email first
     ($user,$domain) = split(/@/, $sender);
     $internal = scalar grep /$domain/, @local_domains_acl;
@@ -85,6 +92,16 @@ sub new {
       $reason = 'Precedence';
       $type_value = 'Bulk';
       die 'Ok';
+    }
+
+    # Check each bulk specific email headers
+    foreach ( @bulk_headers ) {
+      my $bulk_header = $msginfo->orig_header_fields->{lc $_};
+      if ( $bulk_header ) {
+        $reason = sprintf 'Bulk header (%s)', $_;
+        $type_value = 'Bulk';
+        die 'Ok';
+      }
     }
 
     # At this stage, it may be a legitimate private email,
@@ -140,7 +157,7 @@ sub new {
 
         if ( $inside_table > 1 ) {
           $fixed_layout = 1;
-          $reason = 'Multi Tables';
+          $reason = 'Nested Tables';
           last;
         }
 
